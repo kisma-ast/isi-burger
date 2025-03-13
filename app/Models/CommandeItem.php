@@ -13,11 +13,11 @@ class CommandeItem extends Model
 
     public function commande()
     {
-        return $this->belongsTo(Commande::class);
+        return $this->belongsTo(Commande::class, 'commande_id');
     }
 
     public function burger()
     {
-        return $this->belongsTo(Burger::class);
+        return $this->belongsTo(Burger::class, 'burger_id');
     }
 }

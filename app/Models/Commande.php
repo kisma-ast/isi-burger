@@ -59,4 +59,12 @@ class Commande extends Model
     {
         return in_array($this->status, ['en attente', 'en préparation']);
     }
+    public function burgers()
+    {
+        return $this->belongsToMany(Burger::class, 'burger_commande')
+            ->withPivot('quantite', 'price')
+            ->withTimestamps();
+    }
+
+
 }

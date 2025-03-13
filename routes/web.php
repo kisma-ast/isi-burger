@@ -8,40 +8,59 @@ use App\Http\Controllers\PaiementController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\BurgerCommandeController; // Ajout du contrôleur
 
-// Page d'accueil
-Route::get('/', function () {
-    return view('welcome');
-});
+/**
+ * 🔹 Route d'accueil
+ */
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Dashboard (protégé par auth et email vérifié)
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+/**
+ * 🔹 Routes accessibles uniquement aux utilisateurs connectés et vérifiés
+ */
+Route::middleware(['auth', 'verified'])->group(function () {
 
-// Routes d'authentification générées par Breeze
-require __DIR__.'/auth.php';
+    // 📌 Tableau de bord
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-// Routes protégées par l'authentification
-Route::middleware('auth')->group(function () {
+    // 📌 Gestion du profil utilisateur
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
 
-    // Gestion du profil utilisateur (déjà inclus par Breeze)
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // 📌 Gestion des utilisateurs (admin uniquement si besoin)
+    Route::resource('users', UserController::class)->except(['create', 'store']);
 
-    // Gestion des utilisateurs
-    Route::resource('users', UserController::class);
-
-    // Gestion des Burgers
+    // 📌 Gestion des burgers (CRUD)
     Route::resource('burgers', BurgerController::class);
 
-    // Gestion des Commandes
-    Route::resource('commandes', CommandeController::class);
+    // 📌 Gestion des commandes
+    Route::prefix('commandes')->name('commandes.')->group(function () {
+        Route::get('/client', [CommandeController::class, 'clientIndex'])->name('client.index');
+        Route::resource('/', CommandeController::class)->parameters(['' => 'commande']);
+    });
 
-    // Gestion des Articles de Commande (Produits commandés)
-    Route::resource('commande_items', CommandeItemController::class);
+    // 📌 Gestion des éléments de commande (ex: détails d'une commande)
+    Route::resource('commande_items', CommandeItemController::class)->only(['index', 'show', 'destroy']);
 
-    // Gestion des Paiements
-    Route::resource('paiements', PaiementController::class);
+    // 📌 Gestion des paiements
+    Route::resource('paiements', PaiementController::class)->only(['index', 'store']);
+
+    // 📌 Gestion des relations entre burgers et commandes
+    Route::resource('burger-commandes', BurgerCommandeController::class)->only(['index', 'store', 'destroy']);
+
+    Route::get('/paiements/create', [PaiementController::class, 'create'])->name('paiements.create');
+
+    Route::get('/paiements/index', [PaiementController::class, 'index'])->name('paiements.index');
+
+
 });
+
+/**
+ * 🔹 Importation des routes d'authentification
+ */
+require __DIR__ . '/auth.php';

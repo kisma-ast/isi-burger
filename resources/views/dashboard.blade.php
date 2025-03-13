@@ -1,69 +1,65 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-2xl text-white leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
-    </x-slot>
+@extends('layouts.app')
 
-    <div class="py-12 bg-gray-900 min-h-screen flex items-center justify-center">
-        <div class="max-w-4xl mx-auto px-6 lg:px-8">
-            <div
-                class="bg-white/10 backdrop-blur-lg shadow-lg rounded-xl p-6 border border-gray-700 opacity-0 translate-y-10 animate-fade-in-up"
-            >
-                <div class="text-center">
-                    <h1 class="text-3xl font-bold text-white animate-fade-in">
-                        Bienvenue, <span class="text-indigo-400">{{ Auth::user()->name }}</span> 🚀
-                    </h1>
-                    <p class="mt-3 text-gray-300 animate-fade-in-delay">
-                        Vous êtes bien connecté ! Explorez les fonctionnalités de votre application.
-                    </p>
-                    <div class="mt-6">
-                        <a
-                            href="{{ route('burgers.index') }}"
-                            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg shadow-md transition-transform duration-300 transform hover:scale-105 active:scale-95 animate-bounce"
-                        >
-                            Explorer les Burgers 🍔
-                        </a>
-                    </div>
+@section('content')
+    <div class="container mx-auto p-6">
+        <div class="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6">
+
+            {{-- Titre --}}
+            <h1 class="text-3xl font-bold text-indigo-400 text-center">📊 Tableau de Bord</h1>
+            <p class="text-gray-300 text-center mt-2">
+                Bienvenue, <span class="font-semibold text-white">{{ Auth::user()->name }}</span> !
+            </p>
+
+            {{-- Statistiques --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div class="p-4 bg-white dark:bg-gray-700 shadow rounded-lg text-center">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-300">🍔 Total Burgers</h2>
+                    <p class="text-indigo-500 text-3xl font-bold mt-1">{{ $totalBurgers ?? 0 }}</p>
                 </div>
+                <div class="p-4 bg-white dark:bg-gray-700 shadow rounded-lg text-center">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-300">🛒 Commandes en cours</h2>
+                    <p class="text-green-500 text-3xl font-bold mt-1">{{ $totalCommandes ?? 0 }}</p>
+                </div>
+                <div class="p-4 bg-white dark:bg-gray-700 shadow rounded-lg text-center">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-300">💰 Revenus du jour</h2>
+                    <p class="text-yellow-500 text-3xl font-bold mt-1">{{ number_format($revenus ?? 0, 0, ',', ' ') }} XOF</p>
+                </div>
+            </div>
+
+            {{-- Graphiques --}}
+            <div class="mt-10">
+                <h2 class="text-2xl font-bold text-gray-300">📈 Statistiques des ventes</h2>
+                <canvas id="commandesChart" class="mt-6"></canvas>
             </div>
         </div>
     </div>
 
-    <!-- Animations Tailwind -->
-    <style>
-        @keyframes fade-in-up {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        @keyframes fade-in {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-        @keyframes fade-in-delay {
-            0% { opacity: 0; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
+    {{-- Script pour Chart.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const ctx = document.getElementById('commandesChart').getContext('2d');
 
-        .animate-fade-in-up {
-            animation: fade-in-up 0.8s ease-out forwards;
-        }
-        .animate-fade-in {
-            animation: fade-in 1s ease-out forwards;
-        }
-        .animate-fade-in-delay {
-            animation: fade-in-delay 1.5s ease-out forwards;
-        }
-    </style>
-</x-app-layout>
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {!! json_encode(array_map(fn($mois) => DateTime::createFromFormat('!m', $mois)->format('F'), $commandesParMois->pluck('mois')->toArray())) !!},
+                    datasets: [{
+                        label: 'Nombre de commandes',
+                        data: {!! json_encode($commandesParMois->pluck('total')) !!},
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        });
+    </script>
+
+@endsection
