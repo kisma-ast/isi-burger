@@ -44,9 +44,10 @@
                         <td class="py-3 px-4 text-center">
                             <div class="relative inline-block text-left">
                                 <div>
-                                    <button type="button" onclick="toggleDropdown({{ $commande->id }})" class="inline-flex justify-center w-full px-3 py-2 bg-navy-600 text-sm font-medium text-white rounded-md shadow-lg hover:bg-navy-500 focus:outline-none" style="background-color: #2d4363;">
+                                    <button type="button" data-dropdown-button="{{ $commande->id }}" class="inline-flex justify-center w-full px-3 py-2 bg-navy-600 text-sm font-medium text-white rounded-md shadow-lg hover:bg-navy-500 focus:outline-none" style="background-color: #2d4363;">
                                         &#8942;
                                     </button>
+
                                 </div>
                                 <div id="dropdown-{{ $commande->id }}" class="hidden absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10">
                                     <div class="py-1">
@@ -69,29 +70,35 @@
     </div>
 
     <script>
-        function toggleDropdown(id) {
-            const dropdown = document.getElementById(`dropdown-${id}`);
-            const allDropdowns = document.querySelectorAll('[id^="dropdown-"]');
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('[data-dropdown-button]').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.stopPropagation(); // Empêche la fermeture immédiate
+                    const id = this.getAttribute('data-dropdown-button');
+                    const dropdown = document.getElementById(`dropdown-${id}`);
 
-            // Ferme tous les autres dropdowns
-            allDropdowns.forEach(element => {
-                if (element.id !== `dropdown-${id}`) {
-                    element.classList.add('hidden');
-                }
+                    // Fermer tous les autres dropdowns avant d'afficher le bon
+                    document.querySelectorAll('[id^="dropdown-"]').forEach(element => {
+                        if (element !== dropdown) {
+                            element.classList.add('hidden');
+                        }
+                    });
+
+                    // Toggle affichage du bon menu
+                    dropdown.classList.toggle('hidden');
+                });
             });
 
-            // Toggle le dropdown actuel
-            dropdown.classList.toggle('hidden');
-        }
-
-        // Ferme les dropdowns quand on clique ailleurs sur la page
-        window.addEventListener('click', function(e) {
-            if (!e.target.closest('button') || !e.target.closest('button').getAttribute('onclick') || !e.target.closest('button').getAttribute('onclick').includes('toggleDropdown')) {
-                const allDropdowns = document.querySelectorAll('[id^="dropdown-"]');
-                allDropdowns.forEach(element => {
-                    element.classList.add('hidden');
-                });
-            }
+            // Fermer le dropdown si on clique en dehors
+            document.addEventListener('click', function (event) {
+                if (!event.target.closest('[data-dropdown-button]') && !event.target.closest('[id^="dropdown-"]')) {
+                    document.querySelectorAll('[id^="dropdown-"]').forEach(element => {
+                        element.classList.add('hidden');
+                    });
+                }
+            });
         });
     </script>
+
+
 @endsection
